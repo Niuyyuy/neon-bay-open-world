@@ -45,7 +45,9 @@ function showScreen(name) {
 
 // Wire the world's events to the HUD and the screens.
 world.callbacks.onMissionComplete = (m) => {
-  hud.banner('MISSION COMPLETE', `${m.title} — $${m.reward.toLocaleString('en-US')}`);
+  // In a staged screenshot (?shot=...) the capture happens seconds after
+  // staging, so the banner must stay up; in real play it fades as usual.
+  hud.banner('MISSION COMPLETE', `${m.title} — $${m.reward.toLocaleString('en-US')}`, shot !== null);
   hud.toast(`Next job: press M when you are ready.`);
   world.save();
   announce(`Mission complete: ${m.title}. $${m.reward}.`);

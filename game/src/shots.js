@@ -25,7 +25,7 @@ const BRAKE = { handbrake: true, mouseDX: 0, mouseDY: 0 };
  * Stage `world` to the named scene and return the screen to draw over it.
  * start: the title screen over a high view of the city. play: Rio on foot
  * at the Harbor docks, the red coupe and the pier and the bay behind him,
- * mission 1 live. chase: a 3-star chase in a green car, framed from the
+ * mission 1 live. chase: a 3-star chase in the red coupe, framed from the
  * side with the nearest police car in the background. end: mission 1
  * delivered at the Marina garage.
  */
@@ -38,12 +38,16 @@ export function stageShot(name, world) {
     driveFor(world, 3, IDLE);
     // Camera on the road, east of Rio, looking west: Rio in the right of
     // the frame, the red coupe dead centre, the pier and the bay behind.
-    world.setShotCamera(-204, 6, -44, -226, 1, -20);
+    // The camera sits 8 units north of the first framing so the lamp
+    // post at (-215, -32) clears the coupe instead of crossing it.
+    world.setShotCamera(-204, 7, -36, -226, 1, -20);
     return { screen: 'play' };
   }
   if (name === 'chase') {
     world.setPlaying(true);
-    world.spawnDrivenCarAt(0, -60, 0x2ecc71, 0);
+    // The red coupe, not a traffic car: the mission is to steal this car,
+    // so the chase has to show it fleeing with the police on its tail.
+    world.spawnDrivenCarAt(0, -60, 0xd94f4f, 0);
     world.setWanted(3);
     driveFor(world, 2.5, DRIVE);
     // Handbrake to a near-stop, then sit still: the police cars top out
