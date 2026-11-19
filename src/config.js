@@ -133,3 +133,7 @@ export const SAVE_KEY = 'neon-bay.save.v1';
 export const BEST_KEY = 'neon-bay.best.v1';
 export const FONT = 'system-ui, -apple-system, "Segoe UI", sans-serif';
 export const TITLE_FONT = '"Arial Black", system-ui, sans-serif';
+export const GAME_TITLE = 'Neon Bay';
+export const STORY = {
+  intro: 'Rio Vale is out of prison and owes Mara Solano of the Neon Bay docks a fortune. Four jobs stand between Rio and freedom — take a car, any car, and work off the debt.',
+};
