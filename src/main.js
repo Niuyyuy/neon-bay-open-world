@@ -201,6 +201,10 @@ function readInput() {
 
 function runShot(name) {
   const staged = stageShot(name, world);
+  // Freeze the simulation once staged: the capture happens seconds after
+  // staging, and a running chase would keep ramming cars into each other
+  // until the frame is a pile-up. Free play never sets this flag.
+  world.setFrozen(true);
   if (staged.screen === 'title') {
     refreshTitleButtons();
     showScreen('title');

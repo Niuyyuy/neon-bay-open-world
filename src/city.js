@@ -24,7 +24,7 @@ function districtAt(x, z) {
 
 // A window grid painted on a canvas, so glass towers read as glass towers
 // without a texture file.
-function buildingMaterial(color) {
+function buildingMaterial(color, random) {
   const canvas = document.createElement('canvas');
   canvas.width = 128;
   canvas.height = 256;
@@ -33,7 +33,9 @@ function buildingMaterial(color) {
   g.fillRect(0, 0, 128, 256);
   for (let y = 8; y < 248; y += 16) {
     for (let x = 8; x < 120; x += 16) {
-      const lit = Math.random() < 0.35;
+      // Lit windows come from the seeded random, not Math.random, so a
+      // ?seed= replay builds the same city on every load.
+      const lit = random() < 0.35;
       g.fillStyle = lit ? '#ffe9a8' : '#1c2733';
       g.fillRect(x, y, 9, 11);
     }
@@ -113,7 +115,7 @@ export function buildCity(scene, random) {
   // Buildings, one or two per block, taller toward Downtown.
   const materials = {};
   function matFor(color) {
-    if (!materials[color]) materials[color] = buildingMaterial(color);
+    if (!materials[color]) materials[color] = buildingMaterial(color, random);
     return materials[color];
   }
   const blockCenters = [];

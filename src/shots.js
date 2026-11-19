@@ -6,6 +6,7 @@
 // maker chose: the chase camera following the car is too far and too high
 // for a screenshot, and the on-foot camera can end up facing a wall.
 import { STEP } from './config.js';
+import { createRandom } from './random.js';
 
 const SAMPLE = STEP;
 
@@ -28,8 +29,25 @@ const BRAKE = { handbrake: true, mouseDX: 0, mouseDY: 0 };
  * mission 1 live. chase: a 3-star chase in the red coupe, framed from the
  * side with the nearest police car in the background. end: mission 1
  * delivered at the Marina garage.
+ *
+ * Staging must be deterministic: the simulation draws on Math.random
+ * (traffic turns, police spawn angles, enemy fire), so a plain re-stage
+ * gives a different frame on every load — the chase can pile the police
+ * into the coupe on one load and look clean on the next. The whole stage
+ * runs under a seeded replacement for Math.random, restored afterwards,
+ * so seed=1 always stages the same frame.
  */
 export function stageShot(name, world) {
+  const realRandom = Math.random;
+  Math.random = createRandom(1);
+  try {
+    return stageShotSeeded(name, world);
+  } finally {
+    Math.random = realRandom;
+  }
+}
+
+function stageShotSeeded(name, world) {
   world.reset(1);
   if (name === 'play') {
     world.setPlaying(true);
