@@ -99,7 +99,11 @@ export function createHUD(container, city) {
       el('hud-health-text').textContent = Math.ceil(state.health);
       el('hud-cash-value').textContent = state.cash.toLocaleString('en-US');
       el('hud-clock-value').textContent = state.clock;
-      el('hud-district').textContent = state.district;
+      // The district arrives as a plain name string (world.js hands over
+      // districtAt(...).name, never the district object itself).
+      el('hud-district').textContent = typeof state.district === 'string'
+        ? state.district
+        : (state.district && state.district.name ? state.district.name : '');
       let stars = '';
       for (let i = 0; i < WANTED.maxStars; i += 1) {
         stars += `<span class="${i < state.stars ? 'star on' : 'star'}">★</span>`;
