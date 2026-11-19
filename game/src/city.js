@@ -1,6 +1,8 @@
-// Neon Bay itself: roads, sidewalks, buildings by district, lamps, trees
-// and billboards. Returns the colliders the physics needs and the data
-// the minimap draws. Everything is procedural boxes — no borrowed art.
+// Neon Bay itself: roads, sidewalks, buildings by district, lamps, trees,
+// billboards, the bay along the western edge, a dock pier, and two
+// landmark buildings — the Marina garage and the Bay Trust vault.
+// Returns the colliders the physics needs and the data the minimap draws.
+// Everything is procedural boxes — no borrowed art.
 import * as THREE from 'three';
 import { CITY, PALETTE, DISTRICTS } from './config.js';
 import { pick, range } from './random.js';
@@ -65,9 +67,10 @@ export function buildCity(scene, random) {
   const group = new THREE.Group();
   group.name = 'NeonBayCity';
 
-  // Ground: sun-baked grass and dirt under everything.
+  // Ground: sun-baked grass and dirt under everything. It stops ten
+  // units past the last road, so the bay shows beyond its western edge.
   const ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(half * 2 + 200, half * 2 + 200),
+    new THREE.PlaneGeometry(half * 2 + 20, half * 2 + 20),
     new THREE.MeshLambertMaterial({ color: PALETTE.ground }),
   );
   ground.rotation.x = -Math.PI / 2;
@@ -119,6 +122,26 @@ export function buildCity(scene, random) {
   for (const bx of blockCenters) {
     for (const bz of blockCenters) {
       const district = districtAt(bx, bz);
+      // The Bay Trust vault takes its whole Downtown block.
+      if (bx === 130 && bz === -130) {
+        const vault = new THREE.Mesh(
+          new THREE.BoxGeometry(30, 34, 24),
+          matFor(PALETTE.downtown[0]),
+        );
+        vault.position.set(bx, 17, bz);
+        vault.castShadow = true;
+        vault.receiveShadow = true;
+        group.add(vault);
+        const vaultTop = new THREE.Mesh(
+          new THREE.BoxGeometry(32, 1.5, 26),
+          new THREE.MeshLambertMaterial({ color: 0xf2c94c }),
+        );
+        vaultTop.position.set(bx, 34.7, bz);
+        group.add(vaultTop);
+        colliders.push({ minX: bx - 15, maxX: bx + 15, minZ: bz - 12, maxZ: bz + 12 });
+        buildings.push({ x: bx, z: bz, w: 30, d: 24, h: 34, district: district.name });
+        continue;
+      }
       // One in eight blocks is a park instead of buildings.
       if (random() < 0.12) {
         const park = new THREE.Mesh(
@@ -162,6 +185,25 @@ export function buildCity(scene, random) {
     }
   }
 
+  // The Marina garage: a low wide shed with a yellow roller door, just
+  // west of the road at (-208, 130) — the drop-off for mission 1.
+  const garage = new THREE.Mesh(
+    new THREE.BoxGeometry(16, 7, 20),
+    new THREE.MeshLambertMaterial({ color: 0x8a7a68 }),
+  );
+  garage.position.set(-220, 3.5, 130);
+  garage.castShadow = true;
+  garage.receiveShadow = true;
+  group.add(garage);
+  const garageDoor = new THREE.Mesh(
+    new THREE.BoxGeometry(0.3, 5, 12),
+    new THREE.MeshLambertMaterial({ color: 0xf2c94c }),
+  );
+  garageDoor.position.set(-211.8, 2.5, 130);
+  group.add(garageDoor);
+  colliders.push({ minX: -228, maxX: -212, minZ: 120, maxZ: 140 });
+  buildings.push({ x: -220, z: 130, w: 16, d: 20, h: 7, district: 'Old Town' });
+
   // Lamps along every road, trees in Palm Row, billboards downtown.
   const poleMat = new THREE.MeshLambertMaterial({ color: 0x222222 });
   const lampMat = new THREE.MeshLambertMaterial({ color: 0xffe9a8, emissive: 0x554411 });
@@ -196,14 +238,38 @@ export function buildCity(scene, random) {
     group.add(post);
   }
 
-  // The bay itself, glittering past the Harbor edge.
+  // The bay itself: open water along the whole western edge, past the
+  // ground's edge, so the Harbor looks out over it.
   const water = new THREE.Mesh(
-    new THREE.PlaneGeometry(600, 120),
+    new THREE.PlaneGeometry(160, half * 2 + 20),
     new THREE.MeshLambertMaterial({ color: 0x2a6a9a }),
   );
   water.rotation.x = -Math.PI / 2;
-  water.position.set(-half - 80, -0.5, -half - 40);
+  water.position.set(-half - 10 - 80, 0.02, 0);
   group.add(water);
+
+  // Solano's dock pier: wooden boards running out into the bay at z = 26,
+  // with a few crates stacked at its shore end.
+  const pierMat = new THREE.MeshLambertMaterial({ color: 0x6a4a2a });
+  const pier = new THREE.Mesh(new THREE.BoxGeometry(40, 0.8, 8), pierMat);
+  pier.position.set(-264, 0.6, -26);
+  pier.castShadow = true;
+  pier.receiveShadow = true;
+  group.add(pier);
+  for (const px of [-248, -262, -276]) {
+    for (const pz of [-29, -23]) {
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 2.4, 6), pierMat);
+      post.position.set(px, 0, pz);
+      group.add(post);
+    }
+  }
+  const crateMat = new THREE.MeshLambertMaterial({ color: 0x9a7a4a });
+  for (const [cx, cz, s] of [[-238, -20, 2.2], [-238, -24, 1.8], [-236, -22, 1.6]]) {
+    const crate = new THREE.Mesh(new THREE.BoxGeometry(s, s, s), crateMat);
+    crate.position.set(cx, s / 2, cz);
+    crate.castShadow = true;
+    group.add(crate);
+  }
 
   scene.add(group);
   return {

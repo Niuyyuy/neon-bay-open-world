@@ -1,6 +1,6 @@
-[![make.fun](https://make.fun/badge/bounty/gta6-01)](https://make.fun/bounty/gta6-01)
-[![make.fun](https://make.fun/badge/submissions/gta6-01/Niuyyuy/neon-bay-open-world)](https://make.fun/bounty/gta6-01)
-[![make.fun](https://make.fun/badge/agent/Niuyyuy/neon-bay-open-world)](https://make.fun/bounty/gta6-01)
+[![make.fun · gta6-01](https://make.fun/badge/gta6-01.svg)](https://make.fun/bounty/gta6-01?utm_source=github&utm_medium=readme&utm_campaign=gta6-01)
+[![rank](https://make.fun/badge/gta6-01/Niuyyuy/neon-bay-open-world/rank.svg)](https://make.fun/bounty/gta6-01/leaderboard?utm_source=github&utm_medium=readme&utm_campaign=gta6-01)
+[![reward](https://make.fun/badge/gta6-01/Niuyyuy/neon-bay-open-world/reward.svg)](https://make.fun/bounty/gta6-01?utm_source=github&utm_medium=readme&utm_campaign=gta6-01)
 
 # Neon Bay
 
@@ -8,6 +8,9 @@ An original 3D open-world crime game in the browser, built for
 [make.fun's Make GTA 6 bounty](https://make.fun/bounty/gta6-01) ($1,666 in USDC).
 No Rockstar content: the city, characters, vehicles, story, art and sounds
 are all original, built with three.js (vendored) and the WebAudio API.
+
+Want to build your own agent and enter make.fun bounties? Start here:
+[https://make.fun/r/0wvmb34n](https://make.fun/r/0wvmb34n)
 
 ## The story
 
@@ -17,10 +20,10 @@ open while you work them off.
 
 ## Missions
 
-1. **The Red Coupe** — steal the red coupe parked at the Harbor docks and
+1. **The Pickup** — steal the red coupe parked at the Harbor docks and
    deliver it to the Marina garage. ($500)
-2. **Downtown Getaway** — lose a 3-star police chase and reach the
-   safehouse before the clock runs out. ($750)
+2. **Hot Pursuit** — lose a 3-star police chase and reach the Palm Row club
+   before the 90-second clock runs out. ($750)
 3. **Package Run** — collect five packages scattered across the city.
    ($1,000)
 4. **The Last Score** — crack the vault at Bay Trust Bank, fight off the
@@ -58,13 +61,14 @@ node serve.ts
 Everything runs offline from static files — no network requests, no
 external assets. Screenshots of the four staged scenes live in
 `screenshots/` (cover first): the title over the city, Rio on foot at the
-Harbor, a 3-star chase, and the delivered coupe at the Marina garage.
+Harbor docks, a 3-star chase, and the delivered coupe at the Marina garage.
+Each scene is deterministic: open `?shot=start|play|chase|end&seed=1`.
 
 ## Layout
 
 - `game/index.html` — page, HUD and screens
 - `game/src/config.js` — tuning, story and mission data
-- `game/src/city.js` — the procedural city (districts, buildings, roads)
+- `game/src/city.js` — the procedural city (districts, buildings, roads, bay, pier)
 - `game/src/world.js` — the simulation that wires everything together
 - `game/src/player.js` — Rio on foot and the third-person camera
 - `game/src/driving.js` — arcade car physics, enter/exit

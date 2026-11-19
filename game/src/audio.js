@@ -116,8 +116,10 @@ export function createAudio() {
       engineOsc.frequency.value = 55 + rpm * 140;
       engineGain.gain.value = 0.03 + rpm * 0.05;
     },
-    // Called when the player is hurt, starts a car, or drives: these were
-    // missing from the API and threw TypeError mid-update.
+    // The world calls these every frame or on events, so they must exist:
+    // hurt when Rio takes a hit, engineStart when a car is taken, and
+    // setEnginePitch while driving. Each degrades to silence when the
+    // AudioContext cannot be created.
     hurt() {
       tone(140, 0.15, 'sawtooth', 0.2, 70);
     },

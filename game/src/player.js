@@ -90,15 +90,15 @@ export function createPlayerController(scene, startX, startZ) {
       mesh.rotation.y = this.heading;
     },
     // Third-person camera: behind and above the player, looking at the head.
-    placeCamera(camera, targetX, targetZ, targetY) {
+    placeCamera(camera, targetX, targetZ) {
       const yaw = this.cameraYaw;
       const pitch = this.cameraPitch;
       const d = this.cameraDistance;
       const cx = targetX + Math.sin(yaw) * Math.cos(pitch) * d;
       const cz = targetZ + Math.cos(yaw) * Math.cos(pitch) * d;
-      const cy = targetY + Math.sin(pitch) * d + 1.2;
+      const cy = Math.sin(pitch) * d + 1.2;
       camera.position.set(cx, Math.max(1.2, cy), cz);
-      camera.lookAt(targetX, targetY + 1.4, targetZ);
+      camera.lookAt(targetX, 1.4, targetZ);
     },
   };
 }

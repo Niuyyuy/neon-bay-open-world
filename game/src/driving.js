@@ -15,6 +15,10 @@ export function createDrivenCar(scene, mesh) {
     steer: 0,
     health: CAR.health,
     update(dt, throttle, brake, steerInput, handbrake, city, others, onCrash) {
+      // A crash lands at most twice a second: without the cooldown, a
+      // fender-bender that lasts a few frames dealt its full damage every
+      // frame and wrecked the car in one rear-end.
+      this.crashCooldown = Math.max(0, (this.crashCooldown || 0) - dt);
       // Steering follows the wheel: sharper at low speed, calmer at speed.
       const steerTarget = steerInput * CAR.steerMax * Math.max(0.35, 1 - Math.abs(this.speed) / CAR.maxSpeed);
       this.steer += (steerTarget - this.steer) * Math.min(1, dt * 8);
@@ -37,7 +41,8 @@ export function createDrivenCar(scene, mesh) {
       nx = clamped.x;
       nz = clamped.z;
       const hit = collideCircleBox(nx, nz, CAR.length / 2, city.colliders);
-      if (hit.hit && Math.abs(this.speed) > 6) {
+      if (hit.hit && Math.abs(this.speed) > 6 && this.crashCooldown <= 0) {
+        this.crashCooldown = 0.5;
         onCrash(Math.abs(this.speed));
         this.speed *= -0.3;
       }
@@ -53,7 +58,10 @@ export function createDrivenCar(scene, mesh) {
           const push = (3.6 - d) / 2;
           this.x += (dx / d) * push;
           this.z += (dz / d) * push;
-          if (Math.abs(this.speed) > 8) onCrash(Math.abs(this.speed) * 0.7);
+          if (Math.abs(this.speed) > 8 && this.crashCooldown <= 0) {
+            this.crashCooldown = 0.5;
+            onCrash(Math.abs(this.speed) * 0.7);
+          }
           this.speed *= 0.85;
         }
       }
@@ -63,6 +71,7 @@ export function createDrivenCar(scene, mesh) {
       for (const wheel of this.mesh.userData.wheels) wheel.rotation.x += spin;
       return { speed: this.speed };
     },
+    // Chase camera: low and close behind the car, looking ahead of it.
     placeCamera(camera, yaw, pitch) {
       const d = 11;
       const cx = this.x - Math.sin(this.heading) * Math.cos(pitch) * d;

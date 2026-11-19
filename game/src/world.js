@@ -69,6 +69,8 @@ export function createWorld(canvas, seed) {
   const hemi = new THREE.HemisphereLight(0xbfd9ff, 0x8a7a5a, 0.5);
   scene.add(hemi);
 
+  // The city builder takes a seeded random: without it, `random` is
+  // undefined inside buildCity and boot dies on the first park roll.
   const city = createCity(scene, createRandom(seed));
   const effects = createEffects(scene);
   // Audio must never kill boot: createAudio() is lazy and guarded itself,
@@ -142,11 +144,12 @@ export function createWorld(canvas, seed) {
     missions = createMissionManager(dynamic, audio);
     packages = [];
     driven = null;
-    // The mission car: a red coupe parked at the Harbor docks for mission 1.
+    // The mission car: a red coupe parked by the Harbor docks, beside the
+    // pier, for mission 1.
     const mc = {
       mesh: createCarMesh(0xd94f4f, false),
-      x: -195,
-      z: 26,
+      x: -218,
+      z: -26,
       axis: 'z',
       dir: 1,
       speed: 0,
@@ -299,6 +302,9 @@ export function createWorld(canvas, seed) {
     playerZ() {
       return playerPos().z;
     },
+    drivenCar() {
+      return driven;
+    },
     addCash(amount) {
       state.cash += amount;
     },
@@ -336,7 +342,7 @@ export function createWorld(canvas, seed) {
     spawnVaultGuards() {
       const guards = [];
       for (const [dx, dz] of [[-6, 0], [6, 0], [0, 8]]) {
-        const g = combat.spawnEnemy(120 + dx, 120 + dz, 50);
+        const g = combat.spawnEnemy(130 + dx, -130 + dz, 50);
         g.mesh.userData.enemy = g;
         g.mesh.userData.isTarget = true;
         guards.push(g);
@@ -352,7 +358,7 @@ export function createWorld(canvas, seed) {
       player.z = z;
       player.mesh.position.set(x, 0, z);
     },
-    spawnDrivenCarAt(x, z, color) {
+    spawnDrivenCarAt(x, z, color, heading) {
       if (driven) exitCar(false);
       const mesh = createCarMesh(color || 0x2ecc71, false);
       mesh.position.set(x, 0, z);
@@ -360,12 +366,21 @@ export function createWorld(canvas, seed) {
       driven = createDrivenCar(dynamic, mesh);
       driven.x = x;
       driven.z = z;
-      driven.heading = 0;
+      driven.heading = heading === undefined ? 0 : heading;
+      driven.mesh.rotation.y = driven.heading;
       player.mesh.visible = false;
       player.x = x;
       player.z = z;
       audio.engineStart();
       return driven;
+    },
+    // Pin the camera for a staged screenshot: position + look target, in
+    // world units. The shot scenes call this after driving, so the frame
+    // is exactly the one the maker chose, not wherever the chase camera
+    // happened to drift.
+    setShotCamera(px, py, pz, lx, ly, lz) {
+      camera.position.set(px, py, pz);
+      camera.lookAt(lx, ly, lz);
     },
     setTime(hour) {
       state.clockMinutes = hour * 60;
@@ -444,7 +459,10 @@ export function createWorld(canvas, seed) {
         cash: state.cash,
         stars: wanted.stars,
         clock: `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`,
-        district: city.districtAt(pos.x, pos.z),
+        // districtAt returns a district object; the HUD needs its name.
+        // Handing the object over rendered "[object Object]" under the
+        // stars, so the name string is what leaves this function.
+        district: city.districtAt(pos.x, pos.z).name,
         missionTitle: missions.missionTitle(),
         objectiveText: missions.objectiveText(),
         driving: !!driven,
@@ -499,16 +517,21 @@ export function createWorld(canvas, seed) {
           },
         );
         audio.setEnginePitch(Math.abs(result.speed) / 34);
-        // Hit pedestrians with the car.
-        for (const ped of peds.peds) {
-          if (ped.state === 'down') continue;
-          const d = Math.hypot(ped.x - driven.x, ped.z - driven.z);
-          if (d < 2.4 && Math.abs(driven.speed) > 5) {
-            peds.knockDown(ped);
-            effects.burst(ped.x, 1, ped.z, 0xff5533, 16);
-            wanted.addCrime(1);
-            audio.crash();
-            damageCar(5);
+        // Hit pedestrians with the car. `driven` may be null here: the
+        // crash callback above can wreck the car (damageCar -> exitCar),
+        // so guard every use after it.
+        if (driven) {
+          for (const ped of peds.peds) {
+            if (!driven) break; // damageCar below can wreck the car, too.
+            if (ped.state === 'down') continue;
+            const d = Math.hypot(ped.x - driven.x, ped.z - driven.z);
+            if (d < 2.4 && Math.abs(driven.speed) > 5) {
+              peds.knockDown(ped);
+              effects.burst(ped.x, 1, ped.z, 0xff5533, 16);
+              wanted.addCrime(1);
+              audio.crash();
+              damageCar(5);
+            }
           }
         }
         if (input.interact) exitCar(false);
@@ -516,7 +539,7 @@ export function createWorld(canvas, seed) {
         // while driving used to throw here and kill the frame (and the
         // end shot, which exits the car mid-stage).
         if (driven) driven.placeCamera(camera, state.cameraYaw, state.cameraPitch);
-        else player.placeCamera(camera, player.x, player.z, 0);
+        else player.placeCamera(camera, player.x, player.z);
       } else {
         const move = {
           x: (input.right ? 1 : 0) - (input.left ? 1 : 0),
@@ -535,7 +558,7 @@ export function createWorld(canvas, seed) {
           const car = nearestCar(player.x, player.z, traffic.allCars(), 5);
           if (car) enterCar(car);
         }
-        player.placeCamera(camera, player.x, player.z, 0);
+        player.placeCamera(camera, player.x, player.z);
       }
 
       // Threats that make pedestrians flee.
@@ -548,8 +571,13 @@ export function createWorld(canvas, seed) {
       // Police: chase, ram, arrest.
       const policeResult = wanted.update(dt, playerPos(), !!driven, city, combat);
       for (const car of wanted.policeCars) {
+        // A ram lands at most twice a second: without the cooldown a
+        // police car sitting on the player dealt 8 damage every frame
+        // and wrecked the car (or Rio) in under a second.
+        car.ramCooldown = Math.max(0, (car.ramCooldown || 0) - dt);
         const d = Math.hypot(car.x - pos.x, car.z - pos.z);
-        if (d < 3.5) {
+        if (d < 3.5 && car.ramCooldown <= 0) {
+          car.ramCooldown = 0.5;
           if (driven) {
             damageCar(8);
             effects.sparks(car.x, 0.8, car.z);

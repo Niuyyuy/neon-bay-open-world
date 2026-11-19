@@ -1,5 +1,6 @@
 // Neon Bay — every tuning number, colour and story beat in one place.
-// The city is a grid: roads run every ROAD_STEP units, blocks sit between them.
+// The city is a grid: roads run every ROAD_STEP units, blocks sit between
+// them, and the bay washes the whole western edge.
 export const CITY = {
   roadStep: 52,
   roads: 9, // roads at -208, -156, ..., 208
@@ -33,8 +34,8 @@ export const CAR = {
   health: 100,
 };
 
-export const TRAFFIC = { count: 18, speed: 11, minGap: 9 };
-export const PEDESTRIANS = { count: 26, speed: 1.6 };
+export const TRAFFIC = { count: 14, speed: 11, minGap: 9 };
+export const PEDESTRIANS = { count: 24, speed: 1.6 };
 
 export const WANTED = {
   decaySeconds: 22,
@@ -70,35 +71,35 @@ export const DISTRICTS = [
 ];
 
 // The story: Rio Vale, a wheelman fresh out of prison, works off a debt to
-// Mara Solano, who runs the Neon Bay docks. Each mission is one job.
+// Mara Solano, who runs the Neon Bay docks. Four jobs, four payouts.
 export const MISSIONS = [
   {
     id: 'pickup',
     title: 'Mission 1 — The Pickup',
-    brief: 'Mara needs a car. Steal the red coupe parked by the Harbor and bring it to the garage.',
+    brief: 'Mara needs a car. Steal the red coupe parked by the Harbor docks and bring it to the Marina garage.',
     dialogue: [
       ['Mara Solano', 'Rio. You owe me three years. One car, one garage, and we call it even for today.'],
       ['Rio Vale', 'One car. I can do one car.'],
     ],
     objectives: [
-      { kind: 'steal', text: 'Steal the red coupe by the Harbor', target: { x: -182, z: -156 } },
-      { kind: 'deliver', text: 'Deliver it to the garage in Old Town', target: { x: -130, z: 130 } },
+      { kind: 'steal', text: 'Steal the red coupe by the Harbor docks', target: { x: -218, z: -26 } },
+      { kind: 'deliver', text: 'Deliver it to the Marina garage', target: { x: -208, z: 130 } },
     ],
     reward: 500,
   },
   {
     id: 'hot-pursuit',
     title: 'Mission 2 — Hot Pursuit',
-    brief: 'A package for the Palm Row club. The police are already watching — lose them and deliver it in time.',
+    brief: 'A package for the Palm Row club, and the police are already on you. Lose them and deliver it in time.',
     dialogue: [
       ['Mara Solano', 'Package in the glovebox. The Bay PD has the route staked out. Do not stop.'],
       ['Rio Vale', 'Then I will not stop.'],
     ],
     objectives: [
-      { kind: 'drive', text: 'Reach the Palm Row club before time runs out', target: { x: 182, z: 182 }, timeLimit: 75 },
+      { kind: 'drive', text: 'Reach the Palm Row club before time runs out', target: { x: 182, z: 182 }, timeLimit: 90 },
     ],
-    reward: 800,
-    wantedOnStart: 2,
+    reward: 750,
+    wantedOnStart: 3,
   },
   {
     id: 'package-run',
@@ -110,7 +111,7 @@ export const MISSIONS = [
     objectives: [
       { kind: 'collect', text: 'Collect 5 packages around the city', count: 5 },
     ],
-    reward: 1200,
+    reward: 1000,
   },
   {
     id: 'last-score',
@@ -124,7 +125,7 @@ export const MISSIONS = [
       { kind: 'rob', text: 'Storm the Bay Trust vault in Downtown and grab the cash', target: { x: 130, z: -130 } },
       { kind: 'escape', text: 'Escape to the safehouse in Palm Row with 4 stars on you', target: { x: 182, z: 182 } },
     ],
-    reward: 3000,
+    reward: 2500,
     wantedOnStart: 1,
   },
 ];

@@ -113,7 +113,7 @@ export function createMissionManager(scene, audio) {
     },
     spawnPackages(world) {
       const spots = [
-        { x: -182, z: 26 },
+        { x: -218, z: -26 },
         { x: 26, z: -182 },
         { x: 182, z: -26 },
         { x: -26, z: 182 },

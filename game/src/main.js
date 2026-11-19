@@ -6,7 +6,7 @@
 // ?seed=N fixes the world. ?shot=start|play|chase|end (with &seed=N) stages
 // that scene instead of running the loop, paints it twice and sets
 // window.__shotReady for a screenshot.
-import { STEP, MISSIONS, GAME_TITLE, STORY } from './config.js';
+import { STEP, GAME_TITLE, STORY } from './config.js';
 import { createWorld } from './world.js';
 import { createHUD } from './hud.js';
 import { stageShot } from './shots.js';
