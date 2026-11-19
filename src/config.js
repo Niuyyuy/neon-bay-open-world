@@ -68,6 +68,10 @@ export const DISTRICTS = [
   { name: 'Harbor', quadrant: 'NW', minH: 8, maxH: 16, palette: 'harbor' },
   { name: 'Old Town', quadrant: 'SW', minH: 10, maxH: 22, palette: 'oldTown' },
   { name: 'Palm Row', quadrant: 'SE', minH: 6, maxH: 12, palette: 'palmRow' },
+  // Marina: the far-west strip by the water, south of the Harbor docks.
+  // No city blocks sit out there — only the Marina garage — so its
+  // heights are nominal; it exists so the garage reads as Marina.
+  { name: 'Marina', quadrant: 'W', minH: 6, maxH: 10, palette: 'harbor' },
 ];
 
 // The story: Rio Vale, a wheelman fresh out of prison, works off a debt to

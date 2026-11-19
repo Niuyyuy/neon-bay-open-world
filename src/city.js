@@ -17,6 +17,7 @@ function roadLines() {
 function districtAt(x, z) {
   if (x >= 0 && z < 0) return DISTRICTS[0]; // Downtown
   if (x < 0 && z < 0) return DISTRICTS[1]; // Harbor
+  if (x < -200 && z > 0) return DISTRICTS[4]; // Marina (garage strip)
   if (x < 0) return DISTRICTS[2]; // Old Town
   return DISTRICTS[3]; // Palm Row
 }
@@ -202,7 +203,7 @@ export function buildCity(scene, random) {
   garageDoor.position.set(-211.8, 2.5, 130);
   group.add(garageDoor);
   colliders.push({ minX: -228, maxX: -212, minZ: 120, maxZ: 140 });
-  buildings.push({ x: -220, z: 130, w: 16, d: 20, h: 7, district: 'Old Town' });
+  buildings.push({ x: -220, z: 130, w: 16, d: 20, h: 7, district: 'Marina' });
 
   // Lamps along every road, trees in Palm Row, billboards downtown.
   const poleMat = new THREE.MeshLambertMaterial({ color: 0x222222 });

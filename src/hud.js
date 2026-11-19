@@ -133,14 +133,19 @@ export function createHUD(container, city) {
         t.style.opacity = '0';
       }, ms || 3000);
     },
-    banner(text, subtext) {
+    // A staged screenshot is captured seconds after staging, so a banner
+    // that fades after 4 s is gone by capture time: keep it up while the
+    // shot is staged (sticky), and let it fade as usual in real play.
+    banner(text, subtext, sticky) {
       const b = el('hud-banner');
       b.innerHTML = `<div class="banner-title">${text}</div><div class="banner-sub">${subtext || ''}</div>`;
       b.style.opacity = '1';
       if (bannerTimer) clearTimeout(bannerTimer);
-      bannerTimer = setTimeout(() => {
-        b.style.opacity = '0';
-      }, 4000);
+      if (!sticky) {
+        bannerTimer = setTimeout(() => {
+          b.style.opacity = '0';
+        }, 4000);
+      }
     },
     damageFlash() {
       const d = el('hud-damage');
