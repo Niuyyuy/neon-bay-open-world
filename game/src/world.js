@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { CITY, PLAYER, MISSIONS, SAVE_KEY } from './config.js';
 import { createRandom } from './random.js';
-import { createCity, collideCircleBox, clampToCity, districtAt } from './city.js';
+import { buildCity as createCity, collideCircleBox, clampToCity } from './city.js';
 import { createCarMesh, createTrafficManager } from './vehicles.js';
 import { createPedestrianManager } from './pedestrians.js';
 import { createPlayerController } from './player.js';
@@ -15,8 +15,37 @@ import { createMissionManager } from './missions.js';
 import { createAudio } from './audio.js';
 import { createEffects } from './effects.js';
 
+// Silent fallback so a hostile AudioContext can never kill boot.
+function silentAudio() {
+  const noop = () => {};
+  return {
+    unlock: noop, toggleMute: () => false, isMuted: () => true,
+    shoot: noop, crash: noop, pickup: noop, missionComplete: noop,
+    missionFail: noop, horn: noop, door: noop, setEngine: noop,
+    stopEngine: noop, startSiren: noop, stopSiren: noop,
+    startMusic: noop, stopMusic: noop,
+    hurt: noop, engineStart: noop, setEnginePitch: noop,
+  };
+}
+
 export function createWorld(canvas, seed) {
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  // WebGL is expected to work, but if the context cannot be created the
+  // module must say so on the page instead of dying blank: record the
+  // failure, show it, and only then let the throw propagate.
+  let renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  } catch (err) {
+    const message = err && err.message ? err.message : String(err);
+    window.__webglError = message;
+    window.__shotReady = false;
+    const overlay = document.createElement('div');
+    overlay.id = 'webgl-error';
+    overlay.textContent = `Neon Bay needs WebGL — this browser could not create a WebGL context. (${message})`;
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#0b1420;color:#fff;font:16px/1.5 sans-serif;text-align:center;padding:24px;';
+    document.body.appendChild(overlay);
+    throw err;
+  }
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -40,9 +69,16 @@ export function createWorld(canvas, seed) {
   const hemi = new THREE.HemisphereLight(0xbfd9ff, 0x8a7a5a, 0.5);
   scene.add(hemi);
 
-  const city = createCity(scene);
+  const city = createCity(scene, createRandom(seed));
   const effects = createEffects(scene);
-  const audio = createAudio();
+  // Audio must never kill boot: createAudio() is lazy and guarded itself,
+  // but if it ever throws, fall back to a silent stub with the same shape.
+  let audio;
+  try {
+    audio = createAudio();
+  } catch {
+    audio = silentAudio();
+  }
 
   let dynamic = null;
   let traffic = null;
@@ -408,7 +444,7 @@ export function createWorld(canvas, seed) {
         cash: state.cash,
         stars: wanted.stars,
         clock: `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`,
-        district: districtAt(pos.x, pos.z),
+        district: city.districtAt(pos.x, pos.z),
         missionTitle: missions.missionTitle(),
         objectiveText: missions.objectiveText(),
         driving: !!driven,
@@ -476,7 +512,11 @@ export function createWorld(canvas, seed) {
           }
         }
         if (input.interact) exitCar(false);
-        driven.placeCamera(camera, state.cameraYaw, state.cameraPitch);
+        // exitCar clears `driven`, so re-check before using it: pressing E
+        // while driving used to throw here and kill the frame (and the
+        // end shot, which exits the car mid-stage).
+        if (driven) driven.placeCamera(camera, state.cameraYaw, state.cameraPitch);
+        else player.placeCamera(camera, player.x, player.z, 0);
       } else {
         const move = {
           x: (input.right ? 1 : 0) - (input.left ? 1 : 0),
