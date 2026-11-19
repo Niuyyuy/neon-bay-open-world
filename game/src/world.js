@@ -94,6 +94,10 @@ export function createWorld(canvas, seed) {
   let missionCar = null;
   let shootCooldown = 0;
   let lastShotAt = -100;
+  // Frozen once a ?shot= scene is staged: update() becomes a no-op so the
+  // staged frame holds exactly as staged, however long the capture waits.
+  // Free play never sets this flag.
+  let frozen = false;
 
   const state = {
     cash: 150,
@@ -311,6 +315,9 @@ export function createWorld(canvas, seed) {
     setPlaying(value) {
       state.playing = value;
     },
+    setFrozen(value) {
+      frozen = value;
+    },
     onMissionComplete(m) {
       if (callbacks.onMissionComplete) callbacks.onMissionComplete(m);
     },
@@ -441,6 +448,9 @@ export function createWorld(canvas, seed) {
       }
     },
     reset(newSeed) {
+      // A reset world is unfrozen: stageShot calls reset before driving,
+      // so a frozen world that is staged again must actually stage.
+      frozen = false;
       state.cash = 150;
       state.clockMinutes = 9 * 60;
       state.elapsed = 0;
@@ -477,6 +487,9 @@ export function createWorld(canvas, seed) {
       };
     },
     update(dt, input) {
+      // A staged screenshot must hold its frame: once frozen, no traffic
+      // moves, no police ram, no clock advances, no camera drift.
+      if (frozen) return;
       if (!state.playing) {
         // Still render the city behind menus; idle camera drift.
         const t = performance.now() / 1000;
