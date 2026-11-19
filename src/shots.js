@@ -72,30 +72,63 @@ function stageShotSeeded(name, world) {
     // slower than the player's car, so they only catch up once it stops.
     driveFor(world, 1.5, BRAKE);
     driveFor(world, 2.5, IDLE);
-    // Frame the car and the nearest police car together: camera off to
-    // the side of their midpoint, about their separation away, looking at
-    // the midpoint, so both read at a glance.
+    // Stage the police by hand. The chase simulation rams them into the
+    // coupe — a police car steers straight at its target, never stops,
+    // and nothing pushes it back out, so the frame the simulation leaves
+    // behind has one car pressed into the coupe's flank and the other
+    // wherever it happened to stop. Teleport each police car to a fixed
+    // offset from the coupe instead: flanking it on the road, in pursuit
+    // formation, stopped. The world is frozen right after staging, so
+    // nothing moves again and the frame holds exactly as staged.
     const car = world.drivenCar();
     const cops = world.wanted.policeCars;
     if (car && cops.length) {
-      let best = cops[0];
-      let bestD = Infinity;
-      for (const cop of cops) {
-        const d = Math.hypot(cop.x - car.x, cop.z - car.z);
-        if (d < bestD) {
-          bestD = d;
-          best = cop;
+      const fx = Math.sin(car.heading);
+      const fz = Math.cos(car.heading);
+      const rx = Math.cos(car.heading);
+      const rz = -Math.sin(car.heading);
+      // The police flank the coupe, same heading as it, 5 units to each
+      // side. Facing the coupe would turn their long side toward a camera
+      // looking down the road and make them overlap the coupe on screen;
+      // facing forward they read as a chase formation with a clean gap
+      // between the cars. A third car, if there ever is one, goes ahead
+      // on the left instead of behind the coupe, where a rear camera
+      // would put it on top of the coupe.
+      const spots = [
+        { dx: -rx * 6, dz: -rz * 6 },
+        { dx: rx * 6, dz: rz * 6 },
+        { dx: -rx * 6 + fx * 8, dz: -rz * 6 + fz * 8 },
+      ];
+      for (let i = 0; i < cops.length; i += 1) {
+        const cop = cops[i];
+        const spot = spots[i % spots.length];
+        cop.x = car.x + spot.dx;
+        cop.z = car.z + spot.dz;
+        cop.heading = car.heading;
+        cop.speed = 0;
+        cop.mesh.position.set(cop.x, 0, cop.z);
+        cop.mesh.rotation.y = cop.heading;
+      }
+      // Clear the hero cluster: a traffic car the simulation left beside
+      // the coupe would crowd the same patch of screen, so move any car
+      // within 7 units of the coupe back down the road behind the camera,
+      // keeping its lane. It stays a real traffic car, just not in shot.
+      let cleared = 0;
+      for (const t of world.hudState().traffic) {
+        if (Math.hypot(t.x - car.x, t.z - car.z) < 7) {
+          t.z = car.z - 30 - cleared * 6;
+          t.speed = 0;
+          t.mesh.position.set(t.x, 0, t.z);
+          t.mesh.rotation.y = t.heading;
+          cleared += 1;
         }
       }
-      const mx = (car.x + best.x) / 2;
-      const mz = (car.z + best.z) / 2;
-      const dx = best.x - car.x;
-      const dz = best.z - car.z;
-      const len = Math.hypot(dx, dz) || 1;
-      const off = Math.max(12, bestD);
-      const cx = mx + (-dz / len) * off;
-      const cz = mz + (dx / len) * off;
-      world.setShotCamera(cx, 5, cz, mx, 1.5, mz);
+      // Frame from behind the coupe's right flank, looking down the road:
+      // the coupe centre frame, both police cars flanking it with a clean
+      // gap, the road running away ahead of them.
+      const camX = car.x + rx * 3 - fx * 16;
+      const camZ = car.z + rz * 3 - fz * 16;
+      world.setShotCamera(camX, 6.5, camZ, car.x + fx * 2, 1.5, car.z + fz * 2);
     } else if (car) {
       world.setShotCamera(car.x + 10, 4.5, car.z - 10, car.x, 1.5, car.z);
     }
